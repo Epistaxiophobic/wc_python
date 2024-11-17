@@ -9,15 +9,23 @@ def get_details(path):
     details = {
             "err": False,
             "new_lines": 0,
+            "words": 0,
             }
 
     try:
         
         file = open(path)
         for line in file:
+            in_word = 0
             for c in line:
                 if c == "\n":
                     details["new_lines"] += 1
+                if c.isspace():
+                    details["words"] += in_word
+                    in_word = 0
+                else:
+                    in_word = 1
+
     except Exception:
         print(f"Something went wrong while processing file: {path}")
         details["err"] = True
@@ -46,6 +54,7 @@ def main():
     # Get command line arguments
     parser = argparse.ArgumentParser(description="A rewrite of Unix wc utility in python")
     parser.add_argument("-l", "--lines", action="store_true", help="print the newline counts")
+    parser.add_argument("-w", "--words", action="store_true", help="print the word counts")
     parser.add_argument("FILE", type=str, nargs="*", help="With no FILE, or when FILE is -, read standard input")
 
     # Parse arguments
@@ -55,7 +64,7 @@ def main():
         if is_valid_file(path):
             file_details = get_details(path)
             if not file_details["err"]:
-                print(file_details["new_lines"], path)
+                print(file_details["new_lines"], file_details["words"], path)
 
 if __name__ == "__main__":
     main()
