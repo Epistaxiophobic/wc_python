@@ -1,7 +1,41 @@
 import argparse
+from sys import stdin
 from os.path import exists, isfile, getsize
 
-def get_details(path):
+def get_stdin_details():
+    """
+    Return a dict containing details
+    """
+    data = stdin.read()
+    details = {
+            "err": False,
+            "new_lines": 0,
+            "words": 0,
+            "bytes": len(data.encode("utf-8")),
+            "chars": 0,
+            "max_length": 0,
+            }
+    curr_line_length = 0
+    in_word = 0
+    for c in data:
+        details["chars"] += 1
+        if c == "\n":
+            details["max_length"] = max(details["max_length"], curr_line_length)
+            curr_line_length = 0
+            details["new_lines"] += 1
+            details["words"] += in_word
+            in_word = 0
+            continue
+        if c.isspace():
+            details["words"] += in_word
+            in_word = 0
+        else:
+            in_word = 1
+        curr_line_length += 1
+        
+    return details
+
+def get_file_details(path):
     """
     Return a dict containing details
     """
@@ -25,6 +59,8 @@ def get_details(path):
                 details["chars"] += 1
                 if c == "\n":
                     details["new_lines"] += 1
+                    details["words"] += in_word
+                    in_word = 0
                 if c.isspace():
                     details["words"] += in_word
                     in_word = 0
@@ -68,9 +104,17 @@ def main():
     # Parse arguments
     args = parser.parse_args()
 
+    if len(args.FILE) == 0:
+        stdin_details = get_stdin_details()
+        print(stdin_details["new_lines"], stdin_details["words"], stdin_details["bytes"], stdin_details["max_length"])
+    
     for path in args.FILE:
-        if is_valid_file(path):
-            file_details = get_details(path)
+        if path == "-":
+            stdin_details = get_stdin_details()
+            print(stdin_details["new_lines"], stdin_details["words"], stdin_details["bytes"], stdin_details["max_length"], path)
+        
+        elif is_valid_file(path):
+            file_details = get_file_details(path)
             if not file_details["err"]:
                 print(file_details["new_lines"], file_details["words"], file_details["bytes"], file_details["max_length"], path)
 
