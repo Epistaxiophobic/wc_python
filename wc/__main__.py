@@ -68,7 +68,7 @@ def get_file_details(path):
                     in_word = 1
 
     except Exception:
-        print(f"Something went wrong while processing file: {path}")
+        print(f" Something went wrong while processing file: {path}")
         details["err"] = True
     finally:
         try:
@@ -98,17 +98,17 @@ def is_valid_file(path):
     """
 
     if not exists(path):
-        print(f"No such file or directory: {path}")
+        print(f" No such file or directory: {path}")
         return False
     if not isfile(path):
-        print(f"Path is not a file: {path}")
+        print(f" Path is not a file: {path}")
         return False
     return True
 
 def report(details, state, path):
     output = " "
     if state & 1:
-        output += f"{details['new_lines']:4}\t"
+        output += f"{details['new_lines']}\t"
     if state & 2:
         output += f"{details['words']:4}\t"
     if state & 4:
@@ -140,17 +140,47 @@ def main():
         stdin_details = get_stdin_details()
         report(stdin_details, state, "")
         quit(0)
-
+    
+    # Get total info
+    total = {
+            "new_lines": 0,
+            "words": 0,
+            "bytes": 0,
+            "chars": 0,
+            "max_length": 0,
+            }
 
     for path in args.FILE:
+        details = {
+                "new_lines": 0,
+                "words": 0,
+                "bytes": 0,
+                "chars": 0,
+                "max_length": 0,
+                }
         if path == "-":
-            stdin_details = get_stdin_details()
-            report(stdin_details, state, "-")
+            details = get_stdin_details()
+            report(details, state, "-")
 
         elif is_valid_file(path):
-            file_details = get_file_details(path)
-            if not file_details["err"]:
-                report(file_details, state, path)
+            details = get_file_details(path)
+            if not details["err"]:
+                report(details, state, path)
+        else:
+            report(details, state, path)
+            continue
+
+        if details.get("err", False) == False:
+            for k, v in details.items():
+                if k == "err":
+                    continue
+                if k == "max_length":
+                    total[k] = max(total[k], v)
+                else:
+                    total[k] += v
+
+    if len(args.FILE) > 1:
+        report(total, state, "TOTAL")
 
 if __name__ == "__main__":
     main()
