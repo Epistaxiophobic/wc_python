@@ -78,6 +78,20 @@ def get_file_details(path):
     
     return details
 
+def get_state(args):
+    state = 0
+    if args.lines:
+        state |= 1
+    if args.words:
+        state |= 2
+    if args.bytes:
+        state |= 4
+    if args.chars:
+        state |= 8
+    if args.max_line_length:
+        state |= 16
+    return state if state else 7
+
 def is_valid_file(path):
     """
     Return True if path exists and points to file
@@ -91,6 +105,20 @@ def is_valid_file(path):
         return False
     return True
 
+def report(details, state, path):
+    output = " "
+    if state & 1:
+        output += f"{details['new_lines']:4}\t"
+    if state & 2:
+        output += f"{details['words']:4}\t"
+    if state & 4:
+        output += f"{details['bytes']:4}\t"
+    if state & 8:
+        output += f"{details['chars']:4}\t"
+    if state & 16:
+        output += f"{details['max_length']:4}\t"
+    print(output, path)
+
 def main():
     # Get command line arguments
     parser = argparse.ArgumentParser(description="A rewrite of Unix wc utility in python")
@@ -103,20 +131,26 @@ def main():
 
     # Parse arguments
     args = parser.parse_args()
-
+    
+    # Program state
+    state = get_state(args)
+    
+    # No input FILE
     if len(args.FILE) == 0:
         stdin_details = get_stdin_details()
-        print(stdin_details["new_lines"], stdin_details["words"], stdin_details["bytes"], stdin_details["max_length"])
-    
+        report(stdin_details, state, "")
+        quit(0)
+
+
     for path in args.FILE:
         if path == "-":
             stdin_details = get_stdin_details()
-            print(stdin_details["new_lines"], stdin_details["words"], stdin_details["bytes"], stdin_details["max_length"], path)
-        
+            report(stdin_details, state, "-")
+
         elif is_valid_file(path):
             file_details = get_file_details(path)
             if not file_details["err"]:
-                print(file_details["new_lines"], file_details["words"], file_details["bytes"], file_details["max_length"], path)
+                report(file_details, state, path)
 
 if __name__ == "__main__":
     main()
